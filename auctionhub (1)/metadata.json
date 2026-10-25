@@ -1,0 +1,6 @@
+{
+  "name": "AuctionHub",
+  "description": "Comprehensive online auction and real-time bidding platform with auction creation, live bidding, settlement tracking, and analytics.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
