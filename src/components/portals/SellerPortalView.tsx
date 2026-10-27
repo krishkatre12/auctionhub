@@ -32,18 +32,24 @@ export const SellerPortalView: React.FC = () => {
 
   const [activeTabSub, setActiveTabSub] = useState<'listings' | 'shipments' | 'earnings'>('listings');
 
-  // Filter listings by current seller (by ID, or matching seller persona)
+  // Filter listings by current seller (by ID, or matching seller consignments in unified mode)
   const myAuctions = auctions.filter(a => 
     a.sellerId === currentUser.id || 
-    (currentUser.role === 'seller' && (a.sellerId === 'user-auctioneer-marcus' || a.sellerName === currentUser.name))
+    a.sellerName === currentUser.name ||
+    a.sellerId === 'user-auctioneer-marcus' ||
+    currentUser.role === 'all' ||
+    currentUser.role === 'seller'
   );
   const activeLots = myAuctions.filter(a => a.status === 'active');
   const soldLots = myAuctions.filter(a => a.status === 'sold');
   
-  // Settlements where current user is seller
+  // Settlements where current user is seller or managing fulfillment
   const mySalesSettlements = settlements.filter(s => 
     s.sellerId === currentUser.id || 
-    (currentUser.role === 'seller' && (s.sellerId === 'user-auctioneer-marcus' || s.sellerName === currentUser.name))
+    s.sellerName === currentUser.name ||
+    s.sellerId === 'user-auctioneer-marcus' ||
+    currentUser.role === 'all' ||
+    currentUser.role === 'seller'
   );
   const pendingShipments = mySalesSettlements.filter(s => s.shippingStatus === 'processing' || s.shippingStatus === 'pending');
 

@@ -4,13 +4,13 @@ import {
   Gavel, 
   Sun, 
   Moon, 
-  Play, 
-  Pause, 
   RotateCcw, 
   Database, 
-  User as UserIcon,
-  HelpCircle,
-  Menu
+  HelpCircle, 
+  Menu, 
+  LogIn,
+  PlusCircle,
+  ShieldCheck
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -21,24 +21,20 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleMobileSidebar }) => {
   const { 
     darkMode, 
     setDarkMode, 
-    simulationActive, 
-    setSimulationActive, 
     loadSampleData, 
     clearAllData, 
     currentUser, 
-    currentRole, 
     setCurrentRole, 
-    activeTab,
-    setActiveTab,
-    setSelectedAuctionId,
-    setIsAuthModalOpen, 
+    activeTab, 
+    setActiveTab, 
+    setSelectedAuctionId, 
     setIsOnboardingOpen, 
     auctions 
   } = useAuction();
 
   return (
-    <header className="sticky top-0 z-30 w-full bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 transition-colors">
-      <div className="flex items-center justify-between gap-4 px-4 lg:px-6 h-16">
+    <header className="sticky top-0 z-40 w-full shrink-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 transition-colors shadow-2xs">
+      <div className="flex items-center justify-between gap-3 px-4 lg:px-6 h-16">
         
         {/* Left Zone: Mobile toggle + Brand */}
         <div className="flex items-center gap-3 shrink-0">
@@ -50,67 +46,71 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleMobileSidebar }) => {
             <Menu className="w-5 h-5" />
           </button>
 
-          <a href="#" className="flex items-center gap-2.5 whitespace-nowrap shrink-0 group">
-            <div className="w-8 h-8 rounded-lg bg-violet-600 flex items-center justify-center text-white shadow-xs group-hover:bg-violet-700 transition-colors">
+          <button
+            onClick={() => {
+              setActiveTab('dashboard');
+              setSelectedAuctionId(null);
+            }}
+            className="flex items-center gap-2.5 whitespace-nowrap shrink-0 group text-left cursor-pointer"
+            title="Return to AuctionHub Live Marketplace"
+          >
+            <div className="w-8 h-8 rounded-lg bg-violet-600 flex items-center justify-center text-white shadow-xs group-hover:bg-violet-700 transition-colors shrink-0">
               <Gavel className="w-4 h-4" />
             </div>
-            <span className="text-lg font-bold tracking-tight text-slate-900 dark:text-white">
+            <span className="text-lg font-bold tracking-tight text-slate-900 dark:text-white shrink-0">
               Auction<span className="text-violet-600 dark:text-violet-400">Hub</span>
             </span>
-          </a>
+          </button>
         </div>
 
-        {/* Center Zone: Role Mode Switcher with Dedicated Portal Navigation */}
-        <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
+        {/* Center Zone: Unified Platform Navigation (Buy, Sell, Admin in One) */}
+        <div className="hidden md:flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
           <button
             onClick={() => {
-              setCurrentRole('buyer');
-              setActiveTab('bidder-portal');
+              setActiveTab('explore');
               setSelectedAuctionId(null);
             }}
-            className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs font-semibold rounded-md transition-all whitespace-nowrap ${
-              activeTab === 'bidder-portal'
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-all whitespace-nowrap ${
+              activeTab === 'explore'
                 ? 'bg-white dark:bg-slate-900 text-violet-600 dark:text-violet-400 shadow-xs ring-1 ring-violet-500/20'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
-            title="Switch to dedicated Bidder Dashboard"
+            title="Browse all lots, place live bids, and use proxy bidding"
           >
-            <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-            <span className="hidden sm:inline">Bidder View</span>
-            <span className="sm:hidden">Bidder</span>
+            <Gavel className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+            <span>Browse & Bid</span>
           </button>
+
           <button
             onClick={() => {
-              setCurrentRole('seller');
-              setActiveTab('seller-portal');
+              setActiveTab('create');
               setSelectedAuctionId(null);
             }}
-            className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs font-semibold rounded-md transition-all whitespace-nowrap ${
-              activeTab === 'seller-portal'
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-all whitespace-nowrap ${
+              activeTab === 'create'
                 ? 'bg-white dark:bg-slate-900 text-violet-600 dark:text-violet-400 shadow-xs ring-1 ring-violet-500/20'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
-            title="Switch to dedicated Seller Consignment Portal"
+            title="Consign and list new auction lots with multi-step builder"
           >
-            <span className="w-2 h-2 rounded-full bg-violet-500 shrink-0" />
-            <span className="hidden sm:inline">Seller Portal</span>
-            <span className="sm:hidden">Seller</span>
+            <PlusCircle className="w-3.5 h-3.5 text-violet-500 shrink-0" />
+            <span>+ Consign & Sell</span>
           </button>
+
           <button
             onClick={() => {
-              setCurrentRole('admin');
               setActiveTab('admin-portal');
               setSelectedAuctionId(null);
             }}
-            className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs font-semibold rounded-md transition-all whitespace-nowrap ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-all whitespace-nowrap ${
               activeTab === 'admin-portal'
                 ? 'bg-white dark:bg-slate-900 text-violet-600 dark:text-violet-400 shadow-xs ring-1 ring-violet-500/20'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
-            title="Switch to dedicated Admin Moderation Console"
+            title="Access system admin ops, category taxonomy, and audit reports"
           >
-            <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
-            <span>Admin</span>
+            <ShieldCheck className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+            <span>Admin & Ops</span>
           </button>
         </div>
 
@@ -139,28 +139,6 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleMobileSidebar }) => {
             </button>
           )}
 
-          {/* Real-time Bid Simulation Toggle */}
-          <button
-            onClick={() => setSimulationActive(!simulationActive)}
-            className={`inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg transition-colors ${
-              simulationActive
-                ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
-                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-            }`}
-            title={simulationActive ? 'Simulated live bidding is running' : 'Start simulated live bidding'}
-          >
-            {simulationActive ? (
-              <>
-                <Pause className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                <span className="hidden xl:inline text-[11px] font-semibold">Live Bids ON</span>
-              </>
-            ) : (
-              <>
-                <Play className="w-3.5 h-3.5" />
-                <span className="hidden xl:inline text-[11px]">Simulate Bids</span>
-              </>
-            )}
-          </button>
 
           {/* Onboarding Help Guide Button */}
           <button
@@ -185,21 +163,46 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleMobileSidebar }) => {
             )}
           </button>
 
+          {/* Dedicated Login / Sign In Button */}
+          <button
+            onClick={() => {
+              setActiveTab('login');
+              setSelectedAuctionId(null);
+            }}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
+              activeTab === 'login'
+                ? 'bg-violet-600 text-white shadow-xs'
+                : 'text-violet-700 dark:text-violet-300 bg-violet-50 dark:bg-violet-950/60 hover:bg-violet-100 dark:hover:bg-violet-900/60 border border-violet-200 dark:border-violet-800/60'
+            }`}
+            title="Open Login & Account Access Page"
+          >
+            <LogIn className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Sign In / Register</span>
+            <span className="sm:hidden">Login</span>
+          </button>
+
           {/* User Account / Persona Switcher */}
           <button
-            onClick={() => setIsAuthModalOpen(true)}
-            className="flex items-center gap-2 pl-2 pr-2.5 py-1 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-700"
-            title="Switch user account or register"
+            onClick={() => {
+              setActiveTab('login');
+              setSelectedAuctionId(null);
+            }}
+            className={`flex items-center gap-2 pl-2 pr-2.5 py-1 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors border ${
+              activeTab === 'login'
+                ? 'border-violet-600 bg-violet-50/70 dark:bg-violet-950/40 text-violet-700 dark:text-violet-300'
+                : 'border-transparent hover:border-slate-200 dark:hover:border-slate-700'
+            }`}
+            title="Account Profile Gateway (Click to manage account or switch persona)"
           >
             <img
               src={currentUser.avatar}
               alt={currentUser.name}
               referrerPolicy="no-referrer"
-              className="w-7 h-7 rounded-full object-cover border border-violet-500"
+              className="w-7 h-7 rounded-full object-cover border border-violet-500 shrink-0"
             />
-            <div className="hidden md:block text-left">
+            <div className="hidden lg:block text-left">
               <p className="text-xs font-semibold leading-tight">{currentUser.name}</p>
-              <p className="text-[10px] text-slate-500 capitalize">{currentUser.role}</p>
+              <p className="text-[10px] text-violet-600 dark:text-violet-400 font-medium">Buyer · Seller · Admin</p>
             </div>
           </button>
 

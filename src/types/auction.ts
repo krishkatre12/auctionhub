@@ -1,7 +1,7 @@
 export type AuctionStatus = 'active' | 'upcoming' | 'closed' | 'sold' | 'cancelled';
 export type BidStatus = 'placed' | 'winning' | 'outbid' | 'won' | 'lost';
 export type ItemCondition = 'New' | 'Like New' | 'Excellent' | 'Good' | 'Fair' | 'Vintage/Antique';
-export type UserRole = 'buyer' | 'seller' | 'admin';
+export type UserRole = 'all' | 'admin' | 'buyer' | 'seller';
 
 export interface Auction {
   id: string;

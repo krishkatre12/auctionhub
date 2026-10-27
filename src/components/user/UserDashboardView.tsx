@@ -63,7 +63,7 @@ export const UserDashboardView: React.FC = () => {
             <div className="flex items-center gap-2">
               <h1 className="text-xl font-bold text-slate-900 dark:text-white">{currentUser.name}</h1>
               <span className="px-2 py-0.5 text-[10px] uppercase font-bold rounded-md bg-violet-100 dark:bg-violet-900/60 text-violet-700 dark:text-violet-300">
-                {currentUser.role}
+                {currentUser.role === 'all' ? 'Buyer · Seller · Admin' : currentUser.role}
               </span>
             </div>
             <p className="text-xs text-slate-500">{currentUser.email}</p>

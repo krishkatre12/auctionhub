@@ -78,7 +78,7 @@ export const AuctionDetailView: React.FC = () => {
   const isHighestBidder = auction.winnerId === currentUser.id;
   const statusInfo = getAuctionStatusLabel(auction.status);
   const isSeller = auction.sellerId === currentUser.id;
-  const canDeclareWinner = (isSeller || currentRole === 'admin') && auction.status === 'active';
+  const canDeclareWinner = (isSeller || currentRole === 'admin' || currentRole === 'all' || currentUser.role === 'all') && auction.status === 'active';
 
   // Calculator increments
   const step1 = minRequiredBid;

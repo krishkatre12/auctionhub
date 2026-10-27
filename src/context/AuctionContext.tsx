@@ -17,7 +17,7 @@ interface AuctionContextType {
   categories: Category[];
   settlements: Settlement[];
   currentUser: User;
-  currentRole: 'buyer' | 'seller' | 'admin';
+  currentRole: 'all' | 'buyer' | 'seller' | 'admin';
   activeTab: string;
   selectedAuctionId: string | null;
   darkMode: boolean;
@@ -31,7 +31,7 @@ interface AuctionContextType {
   setSimulationActive: (active: boolean) => void;
   setIsOnboardingOpen: (open: boolean) => void;
   setIsAuthModalOpen: (open: boolean) => void;
-  setCurrentRole: (role: 'buyer' | 'seller' | 'admin') => void;
+  setCurrentRole: (role: 'all' | 'buyer' | 'seller' | 'admin') => void;
   switchUser: (user: User) => void;
   updateUser: (updates: Partial<User>) => void;
   placeBid: (auctionId: string, amount: number, isAutoBid?: boolean) => { success: boolean; message: string };
@@ -50,7 +50,7 @@ interface AuctionContextType {
   deleteBid: (bidId: string) => void;
   loadSampleData: () => void;
   clearAllData: () => void;
-  completeOnboarding: (selectedRole?: 'buyer' | 'seller' | 'admin', loadSample?: boolean, name?: string) => void;
+  completeOnboarding: (selectedRole?: 'all' | 'buyer' | 'seller' | 'admin', loadSample?: boolean, name?: string) => void;
   addToast: (title: string, message: string, type?: 'info' | 'success' | 'warning' | 'bid') => void;
   removeToast: (id: string) => void;
   getAuctionBids: (auctionId: string) => Bid[];
@@ -106,12 +106,12 @@ export const AuctionProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
   });
 
-  const [currentRole, setCurrentRoleState] = useState<'buyer' | 'seller' | 'admin'>(() => {
+  const [currentRole, setCurrentRoleState] = useState<'all' | 'buyer' | 'seller' | 'admin'>(() => {
     try {
       const saved = localStorage.getItem('auctionhub_role');
-      return (saved as 'buyer' | 'seller' | 'admin') || 'buyer';
+      return (saved as 'all' | 'buyer' | 'seller' | 'admin') || 'all';
     } catch {
-      return 'buyer';
+      return 'all';
     }
   });
 
@@ -182,7 +182,7 @@ export const AuctionProvider: React.FC<{ children: ReactNode }> = ({ children })
     setDarkModeState(dark);
   }, []);
 
-  const setCurrentRole = useCallback((role: 'buyer' | 'seller' | 'admin') => {
+  const setCurrentRole = useCallback((role: 'all' | 'buyer' | 'seller' | 'admin') => {
     setCurrentRoleState(role);
     setCurrentUser(prev => ({ ...prev, role }));
   }, []);
@@ -207,44 +207,58 @@ export const AuctionProvider: React.FC<{ children: ReactNode }> = ({ children })
     setToasts(prev => prev.filter(t => t.id !== id));
   }, []);
 
-  const completeOnboarding = useCallback((selectedRole?: 'buyer' | 'seller' | 'admin', loadSample?: boolean, name?: string) => {
+  const completeOnboarding = useCallback((selectedRole?: 'all' | 'buyer' | 'seller' | 'admin', loadSample?: boolean, name?: string) => {
     localStorage.setItem('auctionhub_onboarded_completed', 'true');
     setIsOnboardingOpen(false);
 
-    const role = selectedRole || 'buyer';
+    // Merge buyer, seller, admin into unified master account
+    const role: 'all' | 'buyer' | 'seller' | 'admin' = 'all';
     setCurrentRoleState(role);
     localStorage.setItem('auctionhub_role', role);
 
-    // Establish persona corresponding to role
-    let baseUser = SAMPLE_USERS[0];
-    if (role === 'seller') {
-      baseUser = SAMPLE_USERS[1];
-    } else if (role === 'admin') {
-      baseUser = SAMPLE_USERS[2];
-    }
-
+    const baseUser = SAMPLE_USERS[0];
     const updatedUser: User = {
       ...baseUser,
       name: name && name.trim().length > 0 ? name.trim() : baseUser.name,
-      role
+      role: 'all',
+      walletBalance: 150000
     };
 
     setCurrentUser(updatedUser);
     localStorage.setItem('auctionhub_user', JSON.stringify(updatedUser));
 
-    // Immediately route to the dedicated role portal
-    if (role === 'seller') {
-      setActiveTab('seller-portal');
-    } else if (role === 'buyer') {
-      setActiveTab('bidder-portal');
-    } else if (role === 'admin') {
-      setActiveTab('admin-portal');
-    }
+    setActiveTab('dashboard');
     setSelectedAuctionId(null);
 
-    // Initialize catalog state based on role and loadSample
-    if (role === 'buyer') {
-      // Clean and empty workspace for bidder as requested
+    if (loadSample) {
+      const sample = getSampleAuctions();
+      // Bind sample lots and shipments so the user has active listings to sell AND lots to bid on
+      const mergedAuctions = sample.auctions.map((a, i) => {
+        if (i === 0 || i === 3) {
+          return {
+            ...a,
+            sellerId: updatedUser.id,
+            sellerName: updatedUser.name
+          };
+        }
+        return a;
+      });
+      const mergedSettlements = sample.settlements.map((s, i) => {
+        if (i === 0) {
+          return {
+            ...s,
+            sellerId: updatedUser.id,
+            sellerName: updatedUser.name
+          };
+        }
+        return s;
+      });
+      setAuctions(mergedAuctions);
+      setBids(sample.bids);
+      setSettlements(mergedSettlements);
+      addToast('Unified Account Ready', 'Welcome! Full buyer, seller & administrator tools are enabled.', 'success');
+    } else {
+      // Clean slate for unified workspace
       setAuctions([]);
       setBids([]);
       setSettlements([]);
@@ -253,80 +267,37 @@ export const AuctionProvider: React.FC<{ children: ReactNode }> = ({ children })
         watchlist: [],
         autoBids: {}
       }));
-      addToast('Bidder Hub Initialized', 'Welcome! Your bidder workspace is clean and ready for live timed bidding.', 'info');
-    } else if (role === 'seller') {
-      if (loadSample) {
-        const sample = getSampleAuctions();
-        // Bind sample lots and shipments to this seller so they display immediately in the Seller Portal
-        const sellerAuctions = sample.auctions.map((a, i) => {
-          if (i !== 2) {
-            return {
-              ...a,
-              sellerId: updatedUser.id,
-              sellerName: updatedUser.name
-            };
-          }
-          return a;
-        });
-        const sellerSettlements = sample.settlements.map(s => ({
-          ...s,
-          sellerId: updatedUser.id,
-          sellerName: updatedUser.name
-        }));
-        setAuctions(sellerAuctions);
-        setBids(sample.bids);
-        setSettlements(sellerSettlements);
-        addToast('Seller Sample Lots Loaded', 'Loaded sample consignment lots, active bids, and order shipments for evaluation.', 'success');
-      } else {
-        // Blank slate for seller
-        setAuctions([]);
-        setBids([]);
-        setSettlements([]);
-        addToast('Clean Consignments Ready', 'Your seller catalog starts fresh with 0 lots. Click "Create New Auction Lot" to begin!', 'info');
-      }
-    } else {
-      // admin role
-      if (loadSample) {
-        const sample = getSampleAuctions();
-        setAuctions(sample.auctions);
-        setBids(sample.bids);
-        setSettlements(sample.settlements);
-        addToast('Admin Operations Loaded', 'Loaded sample platform database for administration.', 'success');
-      } else {
-        setAuctions([]);
-        setBids([]);
-        setSettlements([]);
-        addToast('Admin Console Ready', 'Clean platform database ready for administration.', 'info');
-      }
+      addToast('Clean Workspace Initialized', 'Fresh unified workspace ready. You can browse, consign lots, and manage platform ops!', 'info');
     }
-  }, [setCurrentRoleState, setActiveTab, setSelectedAuctionId, addToast]);
+  }, [addToast]);
 
   const loadSampleData = useCallback(() => {
     const sample = getSampleAuctions();
-    let sampleAuctions = sample.auctions;
-    let sampleSettlements = sample.settlements;
-    if (currentRole === 'seller') {
-      sampleAuctions = sample.auctions.map((a, i) => {
-        if (i !== 2) {
-          return {
-            ...a,
-            sellerId: currentUser.id,
-            sellerName: currentUser.name
-          };
-        }
-        return a;
-      });
-      sampleSettlements = sample.settlements.map(s => ({
-        ...s,
-        sellerId: currentUser.id,
-        sellerName: currentUser.name
-      }));
-    }
+    const sampleAuctions = sample.auctions.map((a, i) => {
+      if (i === 0 || i === 3) {
+        return {
+          ...a,
+          sellerId: currentUser.id,
+          sellerName: currentUser.name
+        };
+      }
+      return a;
+    });
+    const sampleSettlements = sample.settlements.map((s, i) => {
+      if (i === 0) {
+        return {
+          ...s,
+          sellerId: currentUser.id,
+          sellerName: currentUser.name
+        };
+      }
+      return s;
+    });
     setAuctions(sampleAuctions);
     setBids(sample.bids);
     setSettlements(sampleSettlements);
-    addToast('Sample Data Loaded', 'Populated sample lots, bids, and settlements successfully.', 'success');
-  }, [currentRole, currentUser, addToast]);
+    addToast('Sample Data Loaded', 'Populated unified lots, active bids, and order settlements successfully.', 'success');
+  }, [currentUser, addToast]);
 
   const clearAllData = useCallback(() => {
     setAuctions([]);

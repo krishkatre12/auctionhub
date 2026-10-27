@@ -13,7 +13,8 @@ import {
   CheckCircle2, 
   Package,
   Layers,
-  Activity
+  Activity,
+  Tag
 } from 'lucide-react';
 
 export const DashboardView: React.FC = () => {
@@ -27,9 +28,7 @@ export const DashboardView: React.FC = () => {
     setCurrentRole,
     setActiveTab, 
     setSelectedAuctionId, 
-    loadSampleData,
-    simulationActive,
-    setSimulationActive 
+    loadSampleData
   } = useAuction();
 
   // Metrics
@@ -58,20 +57,28 @@ export const DashboardView: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-6 rounded-2xl bg-gradient-to-r from-violet-900 to-violet-800 text-white shadow-sm relative overflow-hidden">
         <div className="relative z-10 space-y-1.5 max-w-xl">
           <div className="flex items-center gap-2">
-            <span className="px-2.5 py-0.5 text-[10px] font-bold tracking-wider uppercase bg-white/20 rounded-md text-white backdrop-blur-xs">
-              {currentRole.toUpperCase()} WORKSPACE
+            <span className="px-2.5 py-0.5 text-[10px] font-bold tracking-wider uppercase bg-white/20 rounded-md text-white backdrop-blur-xs flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+              UNIFIED MASTER ACCOUNT
             </span>
-            <span className="text-xs text-violet-200">Welcome back, {currentUser.name}</span>
+            <span className="text-xs text-violet-200">Welcome, {currentUser.name}</span>
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-white">
-            Auction Platform Overview
+            Unified Marketplace Hub
           </h1>
           <p className="text-xs text-violet-100 leading-relaxed">
-            Monitor real-time bids, active lot countdowns, proxy bidding activity, and platform settlements.
+            Live timed bidding, consignment selling, and platform management unified into a single command center.
           </p>
         </div>
 
         <div className="relative z-10 flex flex-wrap items-center gap-2.5">
+          <button
+            onClick={() => setActiveTab('explore')}
+            className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-white bg-violet-700/60 hover:bg-violet-700 rounded-lg transition-colors border border-violet-500/40"
+          >
+            <Search className="w-4 h-4" />
+            Browse Lots
+          </button>
           <button
             onClick={() => setActiveTab('create')}
             className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold text-violet-950 bg-white hover:bg-violet-50 rounded-lg transition-colors shadow-xs"
@@ -80,16 +87,16 @@ export const DashboardView: React.FC = () => {
             Create Auction
           </button>
           <button
-            onClick={() => setActiveTab('explore')}
-            className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-white bg-violet-700/60 hover:bg-violet-700 rounded-lg transition-colors border border-violet-500/40"
+            onClick={() => setActiveTab('admin-portal')}
+            className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-white bg-violet-950/70 hover:bg-violet-950 rounded-lg transition-colors border border-violet-400/30"
           >
-            <Search className="w-4 h-4" />
-            Browse Lots
+            <CheckCircle2 className="w-4 h-4 text-amber-400" />
+            Admin Ops
           </button>
         </div>
       </div>
 
-      {/* Role Portal Quick Navigation Bar */}
+      {/* Unified Functional Hub Quick Navigation */}
       <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xs flex flex-col md:flex-row md:items-center md:justify-between gap-3">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg bg-violet-50 dark:bg-violet-950/60 text-violet-600 dark:text-violet-400 flex items-center justify-center shrink-0">
@@ -97,10 +104,10 @@ export const DashboardView: React.FC = () => {
           </div>
           <div>
             <h3 className="text-xs font-bold text-slate-900 dark:text-white">
-              Dedicated Role Dashboards
+              Unified Platform Workspaces
             </h3>
             <p className="text-[11px] text-slate-500">
-              Direct access to role-specific workspaces for live bidding, consignment sales, or platform admin
+              Direct access to live bidding, consignment inventory, and system administration
             </p>
           </div>
         </div>
@@ -108,44 +115,41 @@ export const DashboardView: React.FC = () => {
         <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => {
-              setCurrentRole('buyer');
               setActiveTab('bidder-portal');
               setSelectedAuctionId(null);
             }}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 transition-colors"
           >
             <Gavel className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-            <span>Bidder View & Bids →</span>
+            <span>Bidder Hub (Proxy Bids) →</span>
           </button>
 
           <button
             onClick={() => {
-              setCurrentRole('seller');
               setActiveTab('seller-portal');
               setSelectedAuctionId(null);
             }}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-violet-50 hover:bg-violet-100 dark:bg-violet-950/60 dark:hover:bg-violet-900/60 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-800 transition-colors"
           >
             <Package className="w-3.5 h-3.5 text-violet-600 dark:text-violet-400" />
-            <span>Seller Portal →</span>
+            <span>Seller Hub (Consignments) →</span>
           </button>
 
           <button
             onClick={() => {
-              setCurrentRole('admin');
               setActiveTab('admin-portal');
               setSelectedAuctionId(null);
             }}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/60 dark:hover:bg-amber-900/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 transition-colors"
           >
             <CheckCircle2 className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-            <span>Admin Console →</span>
+            <span>Admin Console (Ops) →</span>
           </button>
         </div>
       </div>
 
       {/* KPI Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         
         {/* KPI 1: Live Auctions */}
         <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xs">
@@ -165,25 +169,7 @@ export const DashboardView: React.FC = () => {
           </div>
         </div>
 
-        {/* KPI 2: Total Bids */}
-        <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xs">
-          <div className="flex items-center justify-between text-slate-500 mb-3">
-            <span className="text-xs font-medium">Total Bids Placed</span>
-            <div className="w-8 h-8 rounded-lg bg-violet-50 dark:bg-violet-950/60 text-violet-600 dark:text-violet-400 flex items-center justify-center">
-              <TrendingUp className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="flex items-baseline justify-between">
-            <span className="text-2xl font-bold font-mono tabular-nums text-slate-900 dark:text-white">
-              {totalBidsCount}
-            </span>
-            <span className="text-xs text-emerald-600 dark:text-emerald-400">
-              {simulationActive ? 'Simulation active' : 'Live state'}
-            </span>
-          </div>
-        </div>
-
-        {/* KPI 3: Platform GMV / Value */}
+        {/* KPI 2: Platform GMV / Value */}
         <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xs">
           <div className="flex items-center justify-between text-slate-500 mb-3">
             <span className="text-xs font-medium">Platform Volume (GMV)</span>
@@ -201,11 +187,11 @@ export const DashboardView: React.FC = () => {
           </div>
         </div>
 
-        {/* KPI 4: User Standing */}
+        {/* KPI 3: Combined Portfolio Standing */}
         <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xs">
           <div className="flex items-center justify-between text-slate-500 mb-3">
             <span className="text-xs font-medium">
-              {currentRole === 'seller' ? 'My Listed Lots' : 'My Winning Bids'}
+              My Portfolio Standing
             </span>
             <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
               <CheckCircle2 className="w-4 h-4" />
@@ -213,12 +199,10 @@ export const DashboardView: React.FC = () => {
           </div>
           <div className="flex items-baseline justify-between">
             <span className="text-2xl font-bold font-mono tabular-nums text-slate-900 dark:text-white">
-              {currentRole === 'seller' 
-                ? auctions.filter(a => a.sellerId === currentUser.id).length 
-                : userWinningCount}
+              {userWinningCount} Winning
             </span>
             <span className="text-xs text-violet-600 dark:text-violet-400 font-medium">
-              {userWonCount} items won
+              {auctions.filter(a => a.sellerId === currentUser.id).length} consignments
             </span>
           </div>
         </div>
@@ -301,10 +285,13 @@ export const DashboardView: React.FC = () => {
 
                     <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
                       <div>
-                        <div className="flex items-center gap-2 text-[11px] text-slate-500 mb-1">
-                          <span>{auction.category}</span>
-                          <span>·</span>
-                          <span>{auction.condition}</span>
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <span className="px-2 py-0.5 text-[10px] font-bold rounded-md bg-violet-100 dark:bg-violet-950/90 text-violet-800 dark:text-violet-200 border border-violet-200 dark:border-violet-800">
+                            {auction.category}
+                          </span>
+                          <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                            {auction.condition}
+                          </span>
                         </div>
                         <h3 className="text-sm font-bold text-slate-900 dark:text-white line-clamp-1 group-hover:text-violet-600 transition-colors">
                           {auction.title}
@@ -336,16 +323,10 @@ export const DashboardView: React.FC = () => {
                 <h2 className="text-base font-bold text-slate-900 dark:text-white">Live Bid Stream</h2>
                 <p className="text-xs text-slate-500">Chronological activity feed</p>
               </div>
-              <button
-                onClick={() => setSimulationActive(!simulationActive)}
-                className={`text-[11px] font-semibold px-2 py-1 rounded-md transition-colors ${
-                  simulationActive 
-                    ? 'text-emerald-700 bg-emerald-50 dark:bg-emerald-950/60'
-                    : 'text-slate-500 hover:text-slate-700'
-                }`}
-              >
-                {simulationActive ? 'Live: Active' : 'Start Simulation'}
-              </button>
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold uppercase tracking-wider border border-emerald-200 dark:border-emerald-800">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                Live Stream
+              </span>
             </div>
 
             <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-3 max-h-[500px] overflow-y-auto">
@@ -411,10 +392,19 @@ export const DashboardView: React.FC = () => {
               <div
                 key={cat.id}
                 onClick={() => setActiveTab('explore')}
-                className="p-3.5 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-850 hover:border-violet-300 dark:hover:border-violet-700 cursor-pointer transition-all text-center space-y-1"
+                className="group p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:border-violet-500 dark:hover:border-violet-400 hover:bg-violet-50/50 dark:hover:bg-slate-750 cursor-pointer transition-all text-center space-y-1.5 shadow-2xs hover:shadow-xs"
               >
-                <h4 className="text-xs font-bold text-slate-900 dark:text-white truncate">{cat.name}</h4>
-                <p className="text-[11px] font-mono text-slate-500">{count} lots</p>
+                <div className="w-8 h-8 mx-auto rounded-lg bg-violet-100 dark:bg-violet-950/90 border border-violet-200 dark:border-violet-800 flex items-center justify-center text-violet-700 dark:text-violet-300 group-hover:scale-105 transition-transform">
+                  <Tag className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100 group-hover:text-violet-600 dark:group-hover:text-violet-300 truncate">
+                    {cat.name}
+                  </h4>
+                  <p className="text-[11px] font-mono font-medium text-slate-500 dark:text-violet-300/90 mt-0.5">
+                    {count} lot{count === 1 ? '' : 's'}
+                  </p>
+                </div>
               </div>
             );
           })}

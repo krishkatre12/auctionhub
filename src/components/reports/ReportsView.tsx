@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { jsPDF } from 'jspdf';
 import { useAuction } from '../../context/AuctionContext';
 import { Settlement } from '../../types/auction';
 import { formatCurrency, formatRelativeTime } from '../../utils/formatters';
@@ -8,7 +9,6 @@ import {
   BarChart3, 
   Download, 
   Printer, 
-  FileSpreadsheet, 
   DollarSign, 
   TrendingUp, 
   Layers, 
@@ -65,118 +65,226 @@ export const ReportsView: React.FC = () => {
     };
   });
 
-  // Export to CSV
-  const handleExportCSV = () => {
-    let csvContent = 'data:text/csv;charset=utf-8,';
-
-    if (reportType === 'auctions') {
-      csvContent += 'ID,Title,Category,Condition,StartingPrice,CurrentBid,Status,Winner,Views\n';
-      auctions.forEach((a) => {
-        const cleanTitle = `"${a.title.replace(/"/g, '""')}"`;
-        csvContent += `${a.id},${cleanTitle},${a.category},${a.condition},${a.startingPrice},${a.currentBid},${a.status},${a.winnerName || 'N/A'},${a.viewsCount}\n`;
-      });
-    } else if (reportType === 'bids') {
-      csvContent += 'BidID,AuctionID,BidderName,Amount,Timestamp,Status,IsAutoBid\n';
-      bids.forEach((b) => {
-        csvContent += `${b.id},${b.auctionId},"${b.bidderName}",${b.amount},${b.timestamp},${b.status},${b.isAutoBid ? 'Yes' : 'No'}\n`;
-      });
-    } else {
-      csvContent += 'InvoiceID,AuctionID,ItemTitle,Buyer,Seller,Amount,PaymentStatus,ShippingStatus,TrackingNumber,Date\n';
-      settlements.forEach((s) => {
-        const cleanTitle = `"${s.auctionTitle.replace(/"/g, '""')}"`;
-        csvContent += `INV-${s.id},${s.auctionId},${cleanTitle},"${s.buyerName}","${s.sellerName}",${s.amount},${s.paymentStatus},${s.shippingStatus},${s.trackingNumber || 'N/A'},${s.createdAt}\n`;
-      });
-    }
-
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `AuctionHub_${reportType}_report_${Date.now()}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    addToast('Report Exported', `Downloaded ${reportType} CSV export.`, 'success');
-  };
-
   // Download Full PDF Summary Report
   const handleDownloadFullReport = () => {
-    const reportHtml = `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <title>AuctionHub Operational Audit & Revenue Report</title>
-  <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 40px; color: #1e293b; max-width: 900px; margin: 0 auto; }
-    h1 { color: #7c3aed; margin-bottom: 4px; }
-    .subtitle { color: #64748b; font-size: 13px; margin-bottom: 24px; }
-    .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 30px; }
-    .kpi-card { border: 1px solid #e2e8f0; padding: 16px; border-radius: 8px; background: #f8fafc; }
-    .kpi-label { font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: bold; }
-    .kpi-value { font-size: 22px; font-weight: bold; margin-top: 6px; font-family: monospace; }
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; margin-bottom: 30px; }
-    th { background: #f1f5f9; padding: 10px; text-align: left; font-size: 12px; text-transform: uppercase; border-bottom: 2px solid #cbd5e1; }
-    td { padding: 10px; border-bottom: 1px solid #e2e8f0; font-size: 12px; }
-  </style>
-</head>
-<body>
-  <h1>AuctionHub Platform Report</h1>
-  <div class="subtitle">Generated: ${new Date().toLocaleString()} · Official Ledger</div>
+    try {
+      const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'pt',
+        format: 'a4'
+      });
 
-  <div class="kpi-grid">
-    <div class="kpi-card"><div class="kpi-label">Gross Settled GMV</div><div class="kpi-value">$${totalGMV.toLocaleString()}</div></div>
-    <div class="kpi-card"><div class="kpi-label">Active Pipeline</div><div class="kpi-value">$${activeValue.toLocaleString()}</div></div>
-    <div class="kpi-card"><div class="kpi-label">Bids Recorded</div><div class="kpi-value">${totalBidsCount}</div></div>
-    <div class="kpi-card"><div class="kpi-label">Clearance Rate</div><div class="kpi-value">${clearanceRate}%</div></div>
-  </div>
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const margin = 36;
+      const printableWidth = pageWidth - margin * 2;
+      let y = 36;
 
-  <h2>All Invoices & Settlements (${settlements.length})</h2>
-  <table>
-    <thead>
-      <tr>
-        <th>Invoice ID</th>
-        <th>Lot Title</th>
-        <th>Buyer</th>
-        <th>Seller</th>
-        <th>Amount</th>
-        <th>Payment</th>
-        <th>Shipping</th>
-      </tr>
-    </thead>
-    <tbody>
-      ${settlements.map(s => `
-        <tr>
-          <td>INV-${s.id}</td>
-          <td>${s.auctionTitle}</td>
-          <td>${s.buyerName}</td>
-          <td>${s.sellerName}</td>
-          <td><strong>$${s.amount.toLocaleString()}</strong></td>
-          <td>${s.paymentStatus.toUpperCase()}</td>
-          <td>${s.shippingStatus.toUpperCase()}</td>
-        </tr>
-      `).join('')}
-    </tbody>
-  </table>
+      // 1. Header Banner
+      doc.setFillColor(109, 40, 217); // Royal violet
+      doc.rect(margin, y, printableWidth, 44, 'F');
+      
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(14);
+      doc.text('AUCTIONHUB PLATFORM AUDIT & REVENUE REPORT', margin + 14, y + 27);
 
-  <script>
-    window.onload = function() { window.print(); }
-  </script>
-</body>
-</html>
-    `;
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(237, 233, 254);
+      doc.text('OFFICIAL SETTLEMENT LEDGER', margin + printableWidth - 14, y + 27, { align: 'right' });
 
-    const blob = new Blob([reportHtml], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `AuctionHub_Full_Report_${Date.now()}.html`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+      y += 56;
 
-    addToast('PDF Report Ready', 'Downloaded printable HTML/PDF report.', 'success');
+      // 2. Report Metadata Sub-bar
+      doc.setTextColor(100, 116, 139);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8.5);
+      doc.text(`Generated: ${new Date().toLocaleString()}  |  Platform Audit Ledger  |  Report ID: AH-REP-${Date.now().toString().slice(-6)}`, margin, y);
+
+      y += 18;
+
+      // 3. KPI Cards Summary
+      const cardGap = 8;
+      const cardWidth = (printableWidth - cardGap * 3) / 4;
+      const cardHeight = 44;
+      const kpis = [
+        { label: 'GROSS SETTLED GMV', val: `$${totalGMV.toLocaleString()}` },
+        { label: 'ACTIVE PIPELINE', val: `$${activeValue.toLocaleString()}` },
+        { label: 'BIDS RECORDED', val: `${totalBidsCount}` },
+        { label: 'CLEARANCE RATE', val: `${clearanceRate}%` }
+      ];
+
+      // Pass 1: Draw all card backgrounds & borders first (avoids jsPDF fill color caching collision)
+      kpis.forEach((_, idx) => {
+        const x = margin + idx * (cardWidth + cardGap);
+        doc.setFillColor(248, 250, 252);
+        doc.setDrawColor(203, 213, 225);
+        doc.setLineWidth(1);
+        doc.roundedRect(x, y, cardWidth, cardHeight, 4, 4, 'FD');
+      });
+
+      // Pass 2: Draw all card text content with high contrast
+      kpis.forEach((kpi, idx) => {
+        const x = margin + idx * (cardWidth + cardGap);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(7.5);
+        doc.setTextColor(100, 116, 139); // Slate-500
+        doc.text(kpi.label, x + 8, y + 15);
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(12.5);
+        doc.setTextColor(15, 23, 42); // Slate-900 high contrast
+        doc.text(kpi.val, x + 8, y + 33);
+      });
+
+      y += 58;
+
+      // 4. Section Title
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(11);
+      doc.setTextColor(15, 23, 42);
+      doc.text(`Official Settlement Invoices (${settlements.length})`, margin, y);
+
+      y += 12;
+
+      // 5. Table Columns definition (total printableWidth = ~523 pt)
+      const colX = {
+        inv: margin + 6,        // 42
+        title: margin + 68,     // 104 (width ~136)
+        buyer: margin + 206,    // 242 (width ~74)
+        seller: margin + 282,   // 318 (width ~74)
+        amount: margin + 358,   // 394 (width ~56)
+        pay: margin + 418,      // 454 (width ~52)
+        ship: margin + 472      // 508 (width ~51)
+      };
+
+      const drawTableHeader = (curY: number) => {
+        doc.setFillColor(241, 245, 249);
+        doc.rect(margin, curY, printableWidth, 20, 'F');
+        doc.setFontSize(7.5);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(71, 85, 105);
+
+        doc.text('INVOICE ID', colX.inv, curY + 13);
+        doc.text('LOT TITLE', colX.title, curY + 13);
+        doc.text('BUYER', colX.buyer, curY + 13);
+        doc.text('SELLER', colX.seller, curY + 13);
+        doc.text('AMOUNT', colX.amount, curY + 13);
+        doc.text('PAYMENT', colX.pay, curY + 13);
+        doc.text('SHIPPING', colX.ship, curY + 13);
+      };
+
+      drawTableHeader(y);
+      y += 24;
+
+      // 6. Table Rows
+      if (settlements.length === 0) {
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8.5);
+        doc.setTextColor(148, 163, 184);
+        doc.text('No settled invoices recorded yet in platform ledger.', margin + 10, y + 10);
+        y += 26;
+      } else {
+        settlements.forEach((s, idx) => {
+          if (y > 750) {
+            doc.addPage();
+            y = 36;
+            drawTableHeader(y);
+            y += 24;
+          }
+
+          // Alternating row background
+          if (idx % 2 === 1) {
+            doc.setFillColor(248, 250, 252);
+            doc.rect(margin, y - 10, printableWidth, 19, 'F');
+          }
+
+          // Bottom border line
+          doc.setDrawColor(241, 245, 249);
+          doc.setLineWidth(0.75);
+          doc.line(margin, y + 8, margin + printableWidth, y + 8);
+
+          // Invoice ID formatted properly (INV-0001, etc.)
+          const rawId = s.id.replace(/^settle-/, '');
+          const cleanId = rawId.length <= 4 ? rawId.padStart(4, '0') : rawId.slice(0, 8);
+          const displayInvId = `INV-${cleanId}`;
+
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(8);
+          doc.setTextColor(30, 41, 59);
+          doc.text(displayInvId, colX.inv, y);
+
+          // Lot Title (clean truncation so it never touches buyer column)
+          const truncatedTitle = s.auctionTitle.length > 22 ? s.auctionTitle.slice(0, 20) + '...' : s.auctionTitle;
+          doc.text(truncatedTitle, colX.title, y);
+
+          // Buyer & Seller
+          doc.text(s.buyerName.slice(0, 11), colX.buyer, y);
+          doc.text(s.sellerName.slice(0, 11), colX.seller, y);
+
+          // Amount
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(15, 23, 42);
+          doc.text(`$${s.amount.toLocaleString()}`, colX.amount, y);
+
+          // Payment Status
+          doc.setFontSize(7.5);
+          const isPaid = s.paymentStatus === 'completed';
+          if (isPaid) {
+            doc.setTextColor(16, 149, 93); // green
+            doc.text('PAID', colX.pay, y);
+          } else {
+            doc.setTextColor(217, 119, 6); // amber
+            doc.text(s.paymentStatus.toUpperCase().slice(0, 7), colX.pay, y);
+          }
+
+          // Shipping Status
+          const isShipped = s.shippingStatus === 'shipped' || s.shippingStatus === 'delivered';
+          if (isShipped) {
+            doc.setTextColor(37, 99, 235); // blue
+          } else {
+            doc.setTextColor(100, 116, 139); // slate
+          }
+          doc.text(s.shippingStatus.toUpperCase().slice(0, 9), colX.ship, y);
+
+          y += 20;
+        });
+
+        // Summary Total Row
+        y += 4;
+        doc.setFillColor(241, 245, 249);
+        doc.rect(margin, y - 8, printableWidth, 22, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8);
+        doc.setTextColor(15, 23, 42);
+        doc.text(`TOTAL SETTLED REVENUE (${settlements.length} LOTS):`, colX.inv, y + 6);
+        const settledSum = settlements.reduce((sum, s) => sum + s.amount, 0);
+        doc.text(`$${settledSum.toLocaleString()}`, colX.amount, y + 6);
+        y += 24;
+      }
+
+      // 7. Footer on all pages
+      const totalPages = doc.getNumberOfPages();
+      for (let i = 1; i <= totalPages; i++) {
+        doc.setPage(i);
+        doc.setFontSize(7.5);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(148, 163, 184);
+        doc.text(
+          `AuctionHub Platform Audit Ledger  ·  Page ${i} of ${totalPages}  ·  Official Verification Document`,
+          pageWidth / 2,
+          pageHeight - 18,
+          { align: 'center' }
+        );
+      }
+
+      doc.save(`AuctionHub_Audit_Report_${Date.now()}.pdf`);
+      addToast('PDF Report Exported', 'Official AuctionHub PDF report saved to your computer.', 'success');
+    } catch (err) {
+      console.error('PDF export error:', err);
+      addToast('Export Error', 'Failed to generate PDF document.', 'warning');
+    }
   };
 
   const handleDeleteSettlement = (id: string, title: string) => {
@@ -233,24 +341,17 @@ export const ReportsView: React.FC = () => {
             Reports & Invoices
           </h1>
           <p className="text-xs text-slate-500">
-            Generate audit reports, manage customer invoices, and export CSV ledger data.
+            Generate audit reports, track clearance rates, and manage customer settlement invoices.
           </p>
         </div>
 
         <div className="flex items-center gap-2.5">
           <button
-            onClick={handleExportCSV}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-violet-700 dark:text-violet-300 bg-violet-50 dark:bg-violet-950/60 hover:bg-violet-100 dark:hover:bg-violet-900/60 rounded-lg transition-colors border border-violet-200 dark:border-violet-800"
-          >
-            <Download className="w-3.5 h-3.5" />
-            Export CSV
-          </button>
-          <button
             onClick={handleDownloadFullReport}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition-colors border border-slate-200 dark:border-slate-700"
+            className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-violet-600 hover:bg-violet-700 active:bg-violet-800 rounded-lg transition-colors shadow-2xs"
           >
             <Printer className="w-3.5 h-3.5" />
-            Download PDF Report
+            Download Audit PDF
           </button>
         </div>
       </div>

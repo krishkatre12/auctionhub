@@ -5,11 +5,11 @@ import { User, UserRole } from '../../types/auction';
 import { X, UserCheck, Shield, PlusCircle, Check } from 'lucide-react';
 
 export const AuthModal: React.FC = () => {
-  const { isAuthModalOpen, setIsAuthModalOpen, currentUser, switchUser, addToast } = useAuction();
+  const { isAuthModalOpen, setIsAuthModalOpen, currentUser, switchUser, addToast, setActiveTab: setGlobalTab } = useAuction();
   const [activeTab, setActiveTab] = useState<'switch' | 'register'>('switch');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [role, setRole] = useState<UserRole>('buyer');
+  const [role] = useState<UserRole>('all');
 
   if (!isAuthModalOpen) return null;
 
@@ -111,7 +111,7 @@ export const AuthModal: React.FC = () => {
                         <div className="flex items-center gap-2">
                           <h4 className="text-xs font-bold text-slate-900 dark:text-white">{user.name}</h4>
                           <span className="text-[10px] uppercase font-semibold text-violet-600 dark:text-violet-400">
-                            {user.role}
+                            Buyer · Seller · Admin
                           </span>
                         </div>
                         <p className="text-[11px] text-slate-500">{user.email}</p>
@@ -152,26 +152,11 @@ export const AuthModal: React.FC = () => {
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Primary Account Role
-                </label>
-                <div className="grid grid-cols-3 gap-2">
-                  {(['buyer', 'seller', 'admin'] as UserRole[]).map((r) => (
-                    <button
-                      type="button"
-                      key={r}
-                      onClick={() => setRole(r)}
-                      className={`py-2 px-2 text-xs font-semibold rounded-lg capitalize border transition-all ${
-                        role === r
-                          ? 'border-violet-600 bg-violet-50 text-violet-700 dark:bg-violet-950/60 dark:text-violet-300'
-                          : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-slate-300'
-                      }`}
-                    >
-                      {r}
-                    </button>
-                  ))}
-                </div>
+              <div className="p-3 rounded-xl bg-violet-50/70 dark:bg-violet-950/40 border border-violet-200 dark:border-violet-800">
+                <span className="text-xs font-bold text-slate-900 dark:text-white block mb-0.5">Unified Master Account</span>
+                <p className="text-[11px] text-slate-600 dark:text-slate-400">
+                  Full Buyer, Seller, and Administrator capabilities are automatically active on this profile.
+                </p>
               </div>
 
               <button
@@ -182,6 +167,21 @@ export const AuthModal: React.FC = () => {
               </button>
             </form>
           )}
+        </div>
+
+        {/* Footer with link to Full Login Page */}
+        <div className="px-6 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/40 flex items-center justify-between text-xs">
+          <span className="text-slate-500">Need full account settings?</span>
+          <button
+            type="button"
+            onClick={() => {
+              setIsAuthModalOpen(false);
+              setGlobalTab('login');
+            }}
+            className="font-bold text-violet-600 dark:text-violet-400 hover:underline"
+          >
+            Open Dedicated Login Page →
+          </button>
         </div>
 
       </div>

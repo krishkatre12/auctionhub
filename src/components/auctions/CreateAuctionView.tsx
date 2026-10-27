@@ -107,16 +107,9 @@ export const CreateAuctionView: React.FC = () => {
     }
 
     const now = new Date();
-    const startTime = isScheduled && startDelayHours > 0
-      ? new Date(now.getTime() + startDelayHours * 3600 * 1000).toISOString()
-      : now.toISOString();
-
-    const endTime = new Date(
-      (isScheduled && startDelayHours > 0 ? now.getTime() + startDelayHours * 3600 * 1000 : now.getTime()) +
-      durationHours * 3600 * 1000
-    ).toISOString();
-
-    const status: AuctionStatus = isScheduled && startDelayHours > 0 ? 'upcoming' : 'active';
+    const startTime = now.toISOString();
+    const endTime = new Date(now.getTime() + durationHours * 3600 * 1000).toISOString();
+    const status: AuctionStatus = 'active';
 
     const newAuction = createAuction({
       title: title.trim(),
@@ -127,7 +120,7 @@ export const CreateAuctionView: React.FC = () => {
       sellerId: currentUser.id,
       sellerName: currentUser.name,
       startingPrice,
-      reservePrice: hasReserve ? reservePrice : undefined,
+      reservePrice: undefined,
       minIncrement,
       startTime,
       endTime,
@@ -436,40 +429,6 @@ export const CreateAuctionView: React.FC = () => {
               </div>
             </div>
 
-            {/* Reserve Price Toggle */}
-            <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 space-y-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="text-xs font-bold text-slate-900 dark:text-white">Confidential Reserve Price</h4>
-                  <p className="text-[11px] text-slate-500">Item will not sell unless bids reach or exceed this threshold.</p>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={hasReserve}
-                  onChange={(e) => setHasReserve(e.target.checked)}
-                  className="w-4 h-4 text-violet-600 rounded focus:ring-violet-500 cursor-pointer"
-                />
-              </div>
-
-              {hasReserve && (
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Reserve Price Amount ($ USD)
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 font-mono text-slate-400 text-xs">$</span>
-                    <input
-                      type="number"
-                      min={startingPrice}
-                      value={reservePrice}
-                      onChange={(e) => setReservePrice(parseFloat(e.target.value) || 0)}
-                      className="w-full pl-7 pr-3 py-2 text-xs font-mono bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-600"
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
-
             {/* Duration Selector */}
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
@@ -496,37 +455,6 @@ export const CreateAuctionView: React.FC = () => {
                   </button>
                 ))}
               </div>
-            </div>
-
-            {/* Scheduled Start Date Toggle */}
-            <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 space-y-2">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="text-xs font-bold text-slate-900 dark:text-white">Schedule for Upcoming Launch</h4>
-                  <p className="text-[11px] text-slate-500">Set item as &apos;Upcoming&apos; before accepting bids.</p>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={isScheduled}
-                  onChange={(e) => setIsScheduled(e.target.checked)}
-                  className="w-4 h-4 text-violet-600 rounded focus:ring-violet-500 cursor-pointer"
-                />
-              </div>
-
-              {isScheduled && (
-                <div className="pt-2">
-                  <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Start in (Hours from now)
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    value={startDelayHours}
-                    onChange={(e) => setStartDelayHours(parseInt(e.target.value) || 1)}
-                    className="w-32 px-3 py-1.5 text-xs font-mono bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white"
-                  />
-                </div>
-              )}
             </div>
 
           </div>
@@ -578,8 +506,8 @@ export const CreateAuctionView: React.FC = () => {
                 </div>
               </div>
 
-              {/* Financial & Scheduling Summary Strip in Matching Purple Theme */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs pt-3 border-t border-violet-200 dark:border-violet-800/80 bg-white/70 dark:bg-slate-900/60 p-3 rounded-xl">
+              {/* Financial & Duration Summary Strip in Matching Purple Theme */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs pt-3 border-t border-violet-200 dark:border-violet-800/80 bg-white/70 dark:bg-slate-900/60 p-3 rounded-xl">
                 <div>
                   <span className="text-[10px] uppercase font-bold text-violet-600 dark:text-violet-400 block">Starting Price</span>
                   <span className="font-mono font-bold text-slate-900 dark:text-white text-sm">
@@ -595,16 +523,9 @@ export const CreateAuctionView: React.FC = () => {
                 </div>
 
                 <div>
-                  <span className="text-[10px] uppercase font-bold text-violet-600 dark:text-violet-400 block">Reserve Price</span>
-                  <span className="font-mono font-bold text-slate-900 dark:text-white text-sm">
-                    {hasReserve ? formatCurrency(reservePrice) : 'None'}
-                  </span>
-                </div>
-
-                <div>
-                  <span className="text-[10px] uppercase font-bold text-violet-600 dark:text-violet-400 block">Initial Status</span>
+                  <span className="text-[10px] uppercase font-bold text-violet-600 dark:text-violet-400 block">Duration & Status</span>
                   <span className="font-bold text-violet-700 dark:text-violet-300 text-sm">
-                    {isScheduled && startDelayHours > 0 ? 'Upcoming' : 'Active (Live)'}
+                    {durationHours} Hours · Active (Live)
                   </span>
                 </div>
               </div>

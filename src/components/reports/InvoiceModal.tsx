@@ -1,4 +1,5 @@
 import React from 'react';
+import { jsPDF } from 'jspdf';
 import { Settlement } from '../../types/auction';
 import { formatCurrency } from '../../utils/formatters';
 import { X, Printer, Download, ShieldCheck, CheckCircle2 } from 'lucide-react';
@@ -22,110 +23,140 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ settlement, onClose 
   };
 
   const handleDownloadPDF = () => {
-    // Generate standalone printable HTML file that opens and prints directly or saves as PDF
-    const htmlContent = `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <title>Invoice - ${invoiceNumber}</title>
-  <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 40px; color: #1e293b; max-width: 800px; margin: 0 auto; }
-    .header { display: flex; justify-content: space-between; border-bottom: 2px solid #7c3aed; padding-bottom: 20px; margin-bottom: 30px; }
-    .brand { font-size: 26px; font-weight: bold; color: #7c3aed; }
-    .invoice-title { font-size: 22px; font-weight: bold; text-align: right; }
-    .meta { display: flex; justify-content: space-between; margin-bottom: 30px; }
-    .meta-col { width: 45%; }
-    .meta-label { font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: bold; margin-bottom: 4px; }
-    .meta-val { font-size: 14px; margin-bottom: 4px; }
-    table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
-    th { background: #f8fafc; border-bottom: 2px solid #e2e8f0; padding: 12px; text-align: left; font-size: 12px; text-transform: uppercase; color: #64748b; }
-    td { padding: 14px 12px; border-bottom: 1px solid #e2e8f0; font-size: 13px; }
-    .totals { width: 300px; margin-left: auto; margin-bottom: 30px; }
-    .total-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; }
-    .grand-total { border-top: 2px solid #7c3aed; font-size: 18px; font-weight: bold; color: #7c3aed; padding-top: 10px; margin-top: 6px; }
-    .seal { background: #f5f3ff; border: 1px solid #ddd6fe; padding: 16px; border-radius: 8px; text-align: center; color: #6d28d9; font-size: 12px; font-weight: bold; }
-    @media print {
-      body { padding: 20px; }
-      .no-print { display: none; }
+    try {
+      const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'pt',
+        format: 'a4'
+      });
+
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const margin = 40;
+      let y = 40;
+
+      // Header Brand
+      doc.setTextColor(124, 58, 237);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(22);
+      doc.text('AuctionHub', margin, y + 20);
+
+      doc.setTextColor(15, 23, 42);
+      doc.setFontSize(18);
+      doc.text('TAX INVOICE & RECEIPT', pageWidth - margin, y + 20, { align: 'right' });
+
+      y += 35;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(100, 116, 139);
+      doc.text('Verified Online Auction & Escrow Settlement House', margin, y);
+      doc.text(`Invoice No: ${invoiceNumber}`, pageWidth - margin, y, { align: 'right' });
+
+      y += 15;
+      doc.text(`Issue Date: ${new Date(settlement.createdAt).toLocaleDateString()}`, pageWidth - margin, y, { align: 'right' });
+
+      y += 20;
+      doc.setDrawColor(124, 58, 237);
+      doc.setLineWidth(1.5);
+      doc.line(margin, y, pageWidth - margin, y);
+
+      y += 25;
+      // Parties Box
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      doc.setTextColor(100, 116, 139);
+      doc.text('BILLED TO (WINNING BIDDER):', margin, y);
+      doc.text('CONSIGNMENT & AUCTIONEER:', margin + 260, y);
+
+      y += 14;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(11);
+      doc.setTextColor(15, 23, 42);
+      doc.text(settlement.buyerName, margin, y);
+      doc.text(settlement.sellerName, margin + 260, y);
+
+      y += 14;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(100, 116, 139);
+      doc.text(`Account ID: ${settlement.buyerId}`, margin, y);
+      doc.text(`Auction Lot ID: #${settlement.auctionId}  |  Payment: ${settlement.paymentStatus.toUpperCase()}`, margin + 260, y);
+
+      y += 25;
+      // Table Header
+      doc.setFillColor(241, 245, 249);
+      doc.rect(margin, y, pageWidth - margin * 2, 22, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      doc.setTextColor(71, 85, 105);
+      doc.text('ITEM DESCRIPTION', margin + 10, y + 14);
+      doc.text('TYPE', margin + 300, y + 14);
+      doc.text('HAMMER PRICE', pageWidth - margin - 10, y + 14, { align: 'right' });
+
+      y += 22;
+      // Table Content
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.setTextColor(15, 23, 42);
+      y += 16;
+      doc.text(settlement.auctionTitle, margin + 10, y);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Auction Lot Settlement', margin + 300, y);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`$${subtotal.toLocaleString()}`, pageWidth - margin - 10, y, { align: 'right' });
+
+      y += 20;
+      doc.setDrawColor(226, 232, 240);
+      doc.line(margin, y, pageWidth - margin, y);
+
+      y += 25;
+      // Totals
+      const totalsX = pageWidth - margin - 200;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9.5);
+      doc.setTextColor(71, 85, 105);
+
+      doc.text('Winning Hammer Bid:', totalsX, y);
+      doc.text(`$${subtotal.toLocaleString()}`, pageWidth - margin - 10, y, { align: 'right' });
+
+      y += 16;
+      doc.text('Buyer Escrow Protection (3%):', totalsX, y);
+      doc.text(`$${escrowFee.toLocaleString()}`, pageWidth - margin - 10, y, { align: 'right' });
+
+      y += 16;
+      doc.text('Fully Insured Shipping:', totalsX, y);
+      doc.setTextColor(22, 163, 74);
+      doc.text('Included / Free', pageWidth - margin - 10, y, { align: 'right' });
+
+      y += 18;
+      doc.setDrawColor(124, 58, 237);
+      doc.setLineWidth(1.5);
+      doc.line(totalsX - 10, y, pageWidth - margin, y);
+
+      y += 16;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(13);
+      doc.setTextColor(124, 58, 237);
+      doc.text('TOTAL PAID:', totalsX, y);
+      doc.text(`$${total.toLocaleString()}`, pageWidth - margin - 10, y, { align: 'right' });
+
+      y += 45;
+      // Escrow Assurance Seal Box
+      doc.setFillColor(245, 243, 255);
+      doc.setDrawColor(221, 214, 254);
+      doc.roundedRect(margin, y, pageWidth - margin * 2, 45, 4, 4, 'FD');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      doc.setTextColor(109, 40, 217);
+      doc.text('ESCROW VERIFICATION & BUYER PROTECTION SEAL', margin + 14, y + 18);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(124, 58, 237);
+      doc.text('Payment is securely escrowed. Funds are released to the consignor only after delivery tracking is verified.', margin + 14, y + 32);
+
+      doc.save(`AuctionHub_Invoice_${invoiceNumber}.pdf`);
+    } catch (err) {
+      console.error('Invoice PDF error:', err);
     }
-  </style>
-</head>
-<body>
-  <div class="header">
-    <div>
-      <div class="brand">AuctionHub</div>
-      <div style="font-size: 12px; color: #64748b; margin-top: 4px;">Verified Online Auction & Escrow Clearing House</div>
-    </div>
-    <div>
-      <div class="invoice-title">OFFICIAL INVOICE</div>
-      <div style="font-size: 12px; color: #64748b; margin-top: 4px;">#${invoiceNumber}</div>
-    </div>
-  </div>
-
-  <div class="meta">
-    <div class="meta-col">
-      <div class="meta-label">Billed To (Winning Bidder):</div>
-      <div class="meta-val"><strong>${settlement.buyerName}</strong></div>
-      <div class="meta-val">${settlement.shippingAddress || 'Verified Bidding Address'}</div>
-      <div class="meta-val">Account ID: ${settlement.buyerId}</div>
-    </div>
-    <div class="meta-col">
-      <div class="meta-label">Consignment & Auctioneer:</div>
-      <div class="meta-val"><strong>${settlement.sellerName}</strong></div>
-      <div class="meta-val">Auction Lot ID: #${settlement.auctionId}</div>
-      <div class="meta-val">Date: ${new Date(settlement.createdAt).toLocaleDateString()}</div>
-      <div class="meta-val">Payment: ${settlement.paymentStatus.toUpperCase()} (Escrow Secured)</div>
-    </div>
-  </div>
-
-  <table>
-    <thead>
-      <tr>
-        <th>Item Particulars</th>
-        <th>Category / Type</th>
-        <th style="text-align: right;">Hammer Price</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><strong>${settlement.auctionTitle}</strong></td>
-        <td>Auction Settlement Lot</td>
-        <td style="text-align: right; font-family: monospace; font-weight: bold;">$${subtotal.toLocaleString()}</td>
-      </tr>
-    </tbody>
-  </table>
-
-  <div class="totals">
-    <div class="total-row"><span>Hammer Bid:</span><span style="font-family: monospace;">$${subtotal.toLocaleString()}</span></div>
-    <div class="total-row"><span>Buyer Escrow Fee (3%):</span><span style="font-family: monospace;">$${escrowFee.toLocaleString()}</span></div>
-    <div class="total-row"><span>Insured Shipping:</span><span style="font-family: monospace; color: #16a34a;">Free / Included</span></div>
-    <div class="total-row grand-total"><span>Total Paid:</span><span style="font-family: monospace;">$${total.toLocaleString()}</span></div>
-  </div>
-
-  <div class="seal">
-    ESCROW VERIFICATION SEAL: All funds are guaranteed and held in secure escrow until parcel delivery is confirmed.
-  </div>
-
-  <script>
-    window.onload = function() {
-      // Auto-trigger print dialog for convenient 1-click Save as PDF
-      window.print();
-    }
-  </script>
-</body>
-</html>
-    `;
-
-    const blob = new Blob([htmlContent], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `Invoice_${invoiceNumber}.html`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
   };
 
   return (

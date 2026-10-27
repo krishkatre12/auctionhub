@@ -281,7 +281,7 @@ export const AdminPortalView: React.FC = () => {
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between">
                   <h4 className="text-xs font-bold text-slate-900 dark:text-white truncate">{user.name}</h4>
-                  <span className="text-[10px] uppercase font-semibold text-violet-600 dark:text-violet-400">{user.role}</span>
+                  <span className="text-[10px] uppercase font-semibold text-violet-600 dark:text-violet-400">{user.role === 'all' ? 'Unified (All)' : user.role}</span>
                 </div>
                 <p className="text-[11px] text-slate-500 truncate">{user.email}</p>
                 <p className="text-[10px] font-mono text-emerald-600 mt-0.5">Wallet: {formatCurrency(user.walletBalance)}</p>
